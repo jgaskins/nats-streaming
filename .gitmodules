@@ -1,0 +1,6 @@
+[submodule "protos/protos/gogo"]
+	path = protos/protos/gogo
+	url = https://github.com/gogo/protobuf
+[submodule "protos/gogo"]
+	path = protos/gogo
+	url = https://github.com/gogo/protobuf

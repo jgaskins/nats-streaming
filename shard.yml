@@ -1,0 +1,15 @@
+name: nats-streaming
+version: 0.1.0
+
+authors:
+  - Jamie Gaskins <jgaskins@hey.com>
+
+dependencies:
+  protobuf:
+    github: jeromegn/protobuf.cr
+  nats:
+    github: jgaskins/nats
+
+crystal: 0.35.1
+
+license: MIT
