@@ -178,11 +178,6 @@ module NATS::Streaming
       @nats.close
     rescue ex : IO::Error
     end
-
-    @mutex = Mutex.new
-    def exclusive
-      @mutex.synchronize { yield }
-    end
   end
 
   class Subscription
