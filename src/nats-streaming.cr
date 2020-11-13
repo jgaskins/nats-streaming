@@ -42,8 +42,15 @@ module NATS::Streaming
     @subscribe_close_requests : String
     @connection_id : Bytes
 
-    def initialize(@cluster_id : String, @client_id : String, @uri = URI.parse("nats:///"))
-      @nats = NATS::Client.new(@uri)
+    def self.new(cluster_id, client_id, uri : URI)
+      new(cluster_id: cluster_id, client_id: client_id, nats: NATS::Client.new([uri]))
+    end
+
+    def self.new(cluster_id, client_id, servers : Enumerable(URI))
+      new(cluster_id: cluster_id, client_id: client_id, nats: NATS::Client.new(servers))
+    end
+
+    def initialize(@cluster_id : String, @client_id : String, @nats = NATS::Client.new)
       @heartbeat_inbox = "heartbeats.#{@cluster_id}.#{@client_id}"
       @nats.subscribe @heartbeat_inbox do |msg|
         if subject = msg.reply_to
