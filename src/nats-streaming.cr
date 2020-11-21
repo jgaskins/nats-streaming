@@ -41,6 +41,7 @@ module NATS::Streaming
     @unsubscribe_requests : String
     @subscribe_close_requests : String
     @connection_id : Bytes
+    @heartbeat_subscription : ::NATS::Subscription
 
     def self.new(cluster_id, client_id, uri : URI)
       new(cluster_id: cluster_id, client_id: client_id, nats: NATS::Client.new([uri]))
@@ -52,12 +53,13 @@ module NATS::Streaming
 
     def initialize(@cluster_id : String, @client_id : String, @nats = NATS::Client.new)
       @heartbeat_inbox = "heartbeats.#{@cluster_id}.#{@client_id}"
-      @nats.subscribe @heartbeat_inbox do |msg|
+      @heartbeat_subscription = @nats.subscribe @heartbeat_inbox do |msg|
         if subject = msg.reply_to
           @nats.publish subject, ""
         end
       end
       @connection_id = UUID.random.to_s.to_slice
+      @subscriptions = {} of Int64 => ::NATS::Subscription
 
       reply = @nats.request "_STAN.discover.#{@cluster_id}",
         message: Nats::ConnectRequest.new(
@@ -170,6 +172,8 @@ module NATS::Streaming
               @nats.publish ack_inbox.not_nil!, ack.to_slice
             end
           end
+
+          @subscriptions[subscription.sid] = subscription
         end
       else
         raise Error.new("Could not subscribe to #{subject}")
@@ -177,6 +181,11 @@ module NATS::Streaming
     end
 
     def close
+      @nats.request @close_requests, Nats::CloseRequest.new(client_id: @client_id).to_slice, timeout: 2.seconds
+      @nats.unsubscribe @heartbeat_subscription
+      @subscriptions.each do |_id, subscription|
+        @nats.unsubscribe subscription
+      end
       @nats.close
     rescue ex : IO::Error
     end
