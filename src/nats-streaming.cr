@@ -192,7 +192,7 @@ module NATS::Streaming
 
   struct Message
     getter subject : String
-    getter data : Bytes
+    getter body : Bytes
     getter reply : String?
     getter timestamp : Time?
     getter sequence : UInt64
@@ -202,7 +202,7 @@ module NATS::Streaming
     def self.from_protobuf_msg(msg : Nats::MsgProto)
       new(
         subject: msg.subject.not_nil!,
-        data: msg.data.not_nil!,
+        body: msg.data.not_nil!,
         reply: msg.reply,
         timestamp: Time::UNIX_EPOCH + msg.timestamp.not_nil!.nanoseconds,
         sequence: msg.sequence || 0_u64,
@@ -211,7 +211,11 @@ module NATS::Streaming
       )
     end
 
-    def initialize(@subject, @data, @reply, @timestamp, @sequence, @redelivered, @redelivery_count)
+    def initialize(@subject, @body, @reply, @timestamp, @sequence, @redelivered, @redelivery_count)
+    end
+
+    def body_io
+      @body_io ||= IO::Memory.new(body)
     end
   end
 end
