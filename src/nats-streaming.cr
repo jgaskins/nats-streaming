@@ -161,12 +161,14 @@ module NATS::Streaming
         elsif ack_inbox = response.ack_inbox
           subscription = @nats.subscribe inbox, queue_group do |msg|
             message = Message.from_protobuf_msg(Nats::MsgProto.from_protobuf(msg.body))
-            block.call message
-            ack = Nats::Ack.new(
-              subject: message.subject,
-              sequence: message.sequence,
-            )
-            @nats.publish ack_inbox.not_nil!, ack.to_slice
+            spawn do
+              block.call message
+              ack = Nats::Ack.new(
+                subject: message.subject,
+                sequence: message.sequence,
+              )
+              @nats.publish ack_inbox.not_nil!, ack.to_slice
+            end
           end
         end
       else
