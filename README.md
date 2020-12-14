@@ -14,13 +14,31 @@
 
 ## Usage
 
+Start by requiring the `nats-streaming` shard:
+
+```crystal
+require "nats-streaming"
+```
+
+To connect to a NATS Streaming (a.k.a. STAN) server, you need to supply 2 mandatory arguments and one of 3 optional arguments to the `NATS::Streaming::Client` constructor:
+
+- `cluster_id : String`: The name of the NATS Streaming cluster to talk to
+- `client_id : String`: How this client will be identified by the NATS Streaming server
+- At most one of the following ways to connect to a NATS server:
+  - `uri : URI`: a `nats://` or `tls://` URI that points to the NATS server your NATS Streaming server talks to
+  - `servers : Array(URI)`: a list of NATS servers representing a NATS cluster
+  - `nats : NATS::Client`: wrapping an existing NATS client
+
+If you pass in an existing NATS client, closing the `NATS::Streaming::Client` will not close the `NATS::Client` because it does not own it. If you pass in a `URI` or `Array(URI)`, the client will start up its own `NATS::Client`, which _will_ be closed when the streaming client closes.
+
+If you don't pass in any of them, it will connect by default to a NATS server on `localhost:4222`. This makes it dead simple to get started developing locally.
+
 ```crystal
 require "nats-streaming"
 
 stan = NATS::Streaming::Client.new(
   cluster_id: "test-cluster",
   client_id: "pub-sub-test-#{UUID.random}",
-  uri: URI.parse("nats:///"),
 )
 
 # Subscribe to the given subject, executing the block when a message is received.
